@@ -23,7 +23,7 @@ add_executable(Controls
         TreeView/TreeView.h TreeView/TreeView.cpp
         TreeWidget/TreeWidget.h TreeWidget/TreeWidget.cpp
         ProgressBar/ProgressBar.h ProgressBar/ProgressBar.cpp
-        )
+        ../Multithreading/Threads.cpp ../Multithreading/Threads.h)
 
 
 target_link_libraries(Controls pthread ${Qt5Widgets_LIBRARIES})
