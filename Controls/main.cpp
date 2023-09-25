@@ -17,8 +17,8 @@ Description : QT Controls
 int main(int argc, char *argv[])
 {
     // TreeView::TestAll(argc, argv);
-    TreeWidget::TestAll(argc, argv);
-    // ProgressBar::TestAll(argc, argv);
+    // TreeWidget::TestAll(argc, argv);
+    ProgressBar::TestAll(argc, argv);
 
     return EXIT_SUCCESS;
 }

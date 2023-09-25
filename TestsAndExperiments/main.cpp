@@ -28,6 +28,9 @@ Description : QT Experiments
 #include <QMenuBar>
 #include <QStyle>
 
+#include "StatusBar.h"
+
+
 
 namespace Experiments
 {
@@ -173,34 +176,6 @@ namespace MessageBoxTests
     {
         QApplication application(argc, argv);
         Window1 window1;
-        window1.show();
-        QApplication::exec();
-    }
-}
-
-
-namespace StatusBarTests
-{
-    class Window : public QMainWindow
-    {
-    public:
-        Window() {
-            QStatusBar* statusBar = this->statusBar();
-            statusBar->showMessage("Status bar...");
-
-            setCentralWidget(&frame);
-            setWindowTitle("Status bar example");
-            resize(300, 300);
-        }
-
-    private:
-        QFrame frame;
-    };
-
-    void TestStatusBar(int argc, char *argv[])
-    {
-        QApplication application(argc, argv);
-        Window window1;
         window1.show();
         QApplication::exec();
     }
@@ -358,16 +333,16 @@ int main(int argc, char *argv[])
 
     // simpleButton(argc, argv);
     // quitButton(argc, argv);
-    // windowWithButton(argc, argv);
+    windowWithButton(argc, argv);
     // widgetWithSlider(argc, argv);
 
     // MessageBoxTests::SimpleMessageBox(argc, argv);
 
-    // StatusBarTests::TestStatusBar(argc, argv);
+    // StatusBar::TestAll(argc, argv);
 
     // MenusBarTests::MenusBarTest(argc, argv);
 
-    Threads::SimpleThread(argc, argv);
+    // Threads::SimpleThread(argc, argv);
 
     // AboutBox::test(argc, argv);
 

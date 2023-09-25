@@ -198,12 +198,12 @@ namespace Threads::PermanentThread
 
 void Threads::TestAll(int argc, char *argv[])
 {
-    // DemoOne::SimpleThread(argc, argv);
+    DemoOne::SimpleThread(argc, argv);
     // DemoTwo::Test(argc, argv);
 
     // Pool::Test(argc, argv);
 
-    ClockGUI::runClock(argc, argv);
+    // ClockGUI::runClock(argc, argv);
 }
 
 #include "Threads.moc"

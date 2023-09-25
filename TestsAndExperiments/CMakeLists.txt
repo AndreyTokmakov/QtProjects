@@ -13,7 +13,10 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 # find_package(QtProjects COMPONENTS Core REQUIRED)
 
-qt5_generate_moc(main.cpp main.moc)
+qt5_generate_moc(
+        main.cpp main.moc
+        StatusBar.cpp StatusBar.h
+)
 
-add_executable(TestsAndExperiments main.cpp main.moc)
+add_executable(TestsAndExperiments main.cpp main.moc StatusBar.cpp)
 target_link_libraries(TestsAndExperiments pthread ${Qt5Widgets_LIBRARIES})
