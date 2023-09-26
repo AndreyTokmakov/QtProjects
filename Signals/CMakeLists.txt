@@ -19,9 +19,13 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 # find_package(QtProjects COMPONENTS Core REQUIRED)
 
-# include all components
-add_executable(Signals 
-    main.cpp
+qt5_generate_moc(
+        main.cpp main.moc
 )
 
-TARGET_LINK_LIBRARIES(Signals ${Qt5Widgets_LIBRARIES})
+# include all components
+add_executable(Signals
+        main.cpp main.moc
+)
+
+target_link_libraries(Signals ${Qt5Widgets_LIBRARIES})

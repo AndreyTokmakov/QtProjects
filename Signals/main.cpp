@@ -28,6 +28,21 @@
 #include <QMenuBar>
 #include <QStyle>
 
+/*
+class MyLabel : public QLabel
+{
+public:
+    explicit MyLabel(const QString &text, QWidget *parent=nullptr, Qt::WindowFlags f=Qt::WindowFlags()):
+            QLabel(text, parent, f) {
+    }
+
+Q_OBJECT
+public slots:
+    void setCustomText() {
+        this->setText("received a signal");
+    }
+};
+*/
 
 void windowWithButton(int argc,  char** argv)
 {
@@ -36,7 +51,17 @@ void windowWithButton(int argc,  char** argv)
 
     QPushButton btnQuit("Quit", &window);
     btnQuit.setFont(QFont("Times", 18, QFont::Bold));
-    btnQuit.setGeometry(150, 80, 100, 40);
+    btnQuit.setGeometry(30, 20, 80, 40);
+
+    QPushButton btnSerTest("Set Text", &window);
+    btnSerTest.setFont(QFont("Times", 18, QFont::Bold));
+    btnSerTest.setGeometry(30, 80, 120, 40);
+
+    QLabel textField("Some initial text", &window);
+    textField.setGeometry(180, 80, 120, 40);
+
+
+    QObject::connect(&btnSerTest, SIGNAL(clicked()), &textField, SLOT(setText("asasasa")));
     QObject::connect(&btnQuit, SIGNAL(clicked()), &app, SLOT(quit()));
 
     window.resize(400, 200);
