@@ -27,22 +27,32 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QStyle>
+#include <utility>
 
-/*
-class MyLabel : public QLabel
+class Bridge : public QObject
 {
+Q_OBJECT
+
 public:
-    explicit MyLabel(const QString &text, QWidget *parent=nullptr, Qt::WindowFlags f=Qt::WindowFlags()):
-            QLabel(text, parent, f) {
+    Bridge(QString  text, QObject * parent = 0) : QObject(parent), text(std::move(text)) {}
+
+    const QString & getText() const;
+    int getLengthOfText() const;
+
+public slots:
+    void setText(const QString& str) {
+        if (text == str)
+            return;
+        text = str;
+        emit textChanged(text);
     }
 
-Q_OBJECT
-public slots:
-    void setCustomText() {
-        this->setText("received a signal");
-    }
+signals:
+    void textChanged(const QString &);
+
+private:
+    QString text;
 };
-*/
 
 void windowWithButton(int argc,  char** argv)
 {
@@ -61,7 +71,7 @@ void windowWithButton(int argc,  char** argv)
     textField.setGeometry(180, 80, 120, 40);
 
 
-    QObject::connect(&btnSerTest, SIGNAL(clicked()), &textField, SLOT(setText("asasasa")));
+    QObject::connect(&btnSerTest, SIGNAL(clicked()), &textField, SLOT(setText(QString("asasasa"))));
     QObject::connect(&btnQuit, SIGNAL(clicked()), &app, SLOT(quit()));
 
     window.resize(400, 200);
