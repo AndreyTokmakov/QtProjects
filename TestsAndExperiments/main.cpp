@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 
     // simpleButton(argc, argv);
     // quitButton(argc, argv);
-    windowWithButton(argc, argv);
+    // windowWithButton(argc, argv);
     // widgetWithSlider(argc, argv);
 
     // MessageBoxTests::SimpleMessageBox(argc, argv);
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 
     // Threads::SimpleThread(argc, argv);
 
-    // AboutBox::test(argc, argv);
+    AboutBox::test(argc, argv);
 
 
     return EXIT_SUCCESS;
