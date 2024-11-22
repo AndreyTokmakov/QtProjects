@@ -30,7 +30,7 @@ Description : PasswordManager.cpp
 #include <QTreeView>
 #include <QLabel>
 
-class Application : public QApplication
+class Application final : public QApplication
 {
 public:
     Application(int &argc, char **argv) : QApplication(argc, argv) {
@@ -38,7 +38,7 @@ public:
     }
 
 private:
-    void enableDarkMode()
+    static void enableDarkMode()
     {
 #ifndef Q_OS_MACOS
         qApp->setStyle("Fusion");
@@ -81,7 +81,7 @@ class Window : public QMainWindow
     //QStandardItemModel model;
 
     const std::unique_ptr<QStatusBar> status { statusBar() };
-    // const std::unique_ptr<QMenuBar> menu { menuBar() };
+    const std::unique_ptr<QMenuBar> menu { menuBar() };
 
 
 public:
@@ -94,7 +94,7 @@ public:
         status->showMessage("Status bar...");
         status->addPermanentWidget(statusLabel.get());
 
-        /*
+        //*
         QMenu* menuFile = menu->addMenu("&File");
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &Window::OnMenuItemClick);
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &Window::OnMenuItemClick);
@@ -125,7 +125,7 @@ public:
 
         QMenu* menuHelp = menu->addMenu("&Help");
         menuHelp->addAction("&About", this, &Window::OnMenuHelpAboutClick);
-        */
+       // *//
 
         // textEditField->setText("Hello, world!");
 
@@ -154,6 +154,52 @@ private:
 };
 
 
+class Window2 final : public QMainWindow
+{
+    const std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
+    const std::unique_ptr<QStatusBar> status { statusBar() };
+    const std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
+    const std::unique_ptr<QMenuBar> menu { menuBar() };
+
+public:
+
+    Window2()
+    {
+        // textEditField->resize(1200, 600);
+
+        setCentralWidget(textEditField.get());
+
+        QMenu* menuFile = menu->addMenu("&File");
+
+
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &Window2::OnMenuItemClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &Window2::OnMenuItemClick);
+
+        menuFile->addSeparator();
+
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &Window2::OnMenuItemClick);
+        menuFile->addAction("Save &As...", this,&Window2::OnMenuItemClick);
+
+        menuFile->addSeparator();
+
+        menuFile->addAction("&Exit", this,&Window2::OnMenuItemClick);
+
+
+
+        statusLabel->setText("Status Label");
+        status->showMessage("Status bar...");
+        status->addPermanentWidget(statusLabel.get());
+
+        showMaximized();
+    }
+
+    void OnMenuItemClick() const
+    {
+        status->showMessage("Status bar...... | ");
+    }
+};
+
+
 void runApp(int argc, char **argv)
 {
     Application application(argc, argv);
@@ -163,12 +209,28 @@ void runApp(int argc, char **argv)
     QApplication::exec();
 }
 
+int runApp2(int argc, char **argv)
+{
+    Application app(argc, argv);
+
+    // QTextEdit textEdit("Hello World!");
+    // textEdit.show();
+
+    Window2 window;
+    window.show();
+
+    return Application::exec();
+}
+
+
 // https://cpp.hotexamples.com/examples/-/QTextEdit/-/cpp-qtextedit-class-examples.html
 int main([[maybe_unused]] int argc,
          [[maybe_unused]] char** argv)
 {
     const std::vector<std::string_view> args(argv + 1, argv + argc);
-    runApp(argc, argv);
-   
+
+    // runApp(argc, argv);
+    runApp2(argc, argv);
+
     return EXIT_SUCCESS;
 }
