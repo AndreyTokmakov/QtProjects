@@ -12,8 +12,7 @@ Description : PasswordManager.cpp
 #include <vector>
 
 
-
-#include <QtCore>
+#include <QTextEdit>
 #include <QWidget>
 #include <QApplication>
 #include <QPushButton>
@@ -30,7 +29,6 @@ Description : PasswordManager.cpp
 #include <QHeaderView>
 #include <QTreeView>
 #include <QLabel>
-#include <QProgressBar>
 
 class Application : public QApplication
 {
@@ -75,33 +73,28 @@ private:
 
 class Window : public QMainWindow
 {
+    std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
+    std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
+
+    QFrame frame;
+    QVBoxLayout layout { &frame };
+    //QStandardItemModel model;
+
+    const std::unique_ptr<QStatusBar> status { statusBar() };
+    // const std::unique_ptr<QMenuBar> menu { menuBar() };
+
+
 public:
 
     Window()
     {
-        // TODO: Refactor this
-        QLabel *statusLabel = new QLabel(this);
-
-        QProgressBar *statusProgressBar = new QProgressBar(this);
-
-        // statusProgressBar->move(50, 110);
-        // statusProgressBar->resize(100, 25);
-        statusProgressBar->setMinimum(0);
-        statusProgressBar->setMaximum(100);
-        statusProgressBar->setValue(50);
-        statusProgressBar->setTextVisible(false);
-        statusProgressBar->setToolTip(QString("Blah-Blah-Blah"));
-
-        //statusProgressBar->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
-
         statusLabel->setText("Status Label");
 
         /** Add status bar: **/
-        // status->showMessage("Status bar...");
-        status->addPermanentWidget(statusLabel);
-        status->addPermanentWidget(statusProgressBar);
+        status->showMessage("Status bar...");
+        status->addPermanentWidget(statusLabel.get());
 
-
+        /*
         QMenu* menuFile = menu->addMenu("&File");
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &Window::OnMenuItemClick);
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &Window::OnMenuItemClick);
@@ -114,6 +107,7 @@ public:
         menuFile->addSeparator();
 
         menuFile->addAction("&Exit", this,&Window::OnMenuItemClick);
+
 
         QMenu* menuEdit = menu->addMenu("&Edit");
         menuEdit->addAction("&Undo", this,&Window::OnMenuItemClick);
@@ -131,18 +125,25 @@ public:
 
         QMenu* menuHelp = menu->addMenu("&Help");
         menuHelp->addAction("&About", this, &Window::OnMenuHelpAboutClick);
+        */
 
+        // textEditField->setText("Hello, world!");
+
+        layout.layout()->addWidget(textEditField.get());
 
         setCentralWidget(&frame);
         setWindowTitle("Tree view example");
-        //resize(300, 300);
+        // resize(300, 300);
+        showMaximized();
 
         // thread.start();
         // thread.wait();
     }
 
 private:
-    void OnMenuItemClick() {
+
+    void OnMenuItemClick() const
+    {
         status->showMessage("Status bar...... | ");
     }
 
@@ -150,14 +151,6 @@ private:
         QMessageBox::about(this, "About", "Simple password manager app"
                                           ".\nVersion 1.0.0\n\n@ 2024 by Andrei Tokmakov.");
     }
-
-private:
-    QFrame frame;
-    QVBoxLayout layout { &frame };
-    QStandardItemModel model;
-
-    const std::unique_ptr<QStatusBar> status { statusBar() };
-    const std::unique_ptr<QMenuBar> menu { menuBar() };
 };
 
 
@@ -170,7 +163,7 @@ void runApp(int argc, char **argv)
     QApplication::exec();
 }
 
-
+// https://cpp.hotexamples.com/examples/-/QTextEdit/-/cpp-qtextedit-class-examples.html
 int main([[maybe_unused]] int argc,
          [[maybe_unused]] char** argv)
 {
