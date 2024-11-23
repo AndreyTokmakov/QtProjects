@@ -304,8 +304,6 @@ public:
 
 
 // TODO:
-//  - Open file
-//  - Handle close
 //  - Password Dialog on Open
 //  - Choose BG color && Text Color
 //  - Decrypt / Encrypt password file
