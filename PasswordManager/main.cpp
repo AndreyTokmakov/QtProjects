@@ -30,22 +30,30 @@ Description : PasswordManager.cpp
 #include <QTreeView>
 #include <QLabel>
 
-class Application final : public QApplication
+class DarkThemeApplication final : public QApplication
 {
 public:
-    Application(int &argc, char **argv) : QApplication(argc, argv) {
+    DarkThemeApplication(int &argc, char **argv) : QApplication(argc, argv) {
         enableDarkMode();
     }
 
 private:
+
+    static QColor makeColor(int32_t red = 0, int32_t green = 0, int32_t blue = 0) noexcept
+    {
+        return QColor(red, green, blue);
+    }
+
     static void enableDarkMode()
     {
 #ifndef Q_OS_MACOS
+
         qApp->setStyle("Fusion");
         QPalette darkPalette = QPalette();
-        const QColor darkColor = QColor(65, 65, 65);
-        const QColor baseColor = QColor(48,48,48);
-        const QColor disabledColor = QColor(127,127,127);
+        const QColor darkColor = makeColor(65, 65, 65);
+        const QColor baseColor = makeColor(0, 43, 54);
+        const QColor disabledColor = makeColor(127,127,127);
+        const QColor linksColor = makeColor(42, 130, 218);
 
         darkPalette.setColor(QPalette::Window, darkColor);
         darkPalette.setColor(QPalette::WindowText, Qt::white);
@@ -59,8 +67,8 @@ private:
         darkPalette.setColor(QPalette::ButtonText, Qt::white);
         darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledColor);
         darkPalette.setColor(QPalette::BrightText, Qt::red);
-        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Link, linksColor);
+        darkPalette.setColor(QPalette::Highlight, linksColor);
         darkPalette.setColor(QPalette::HighlightedText, Qt::black);
         darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, disabledColor);
 
@@ -70,7 +78,7 @@ private:
     }
 };
 
-
+#if 0
 class Window : public QMainWindow
 {
     std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
@@ -154,74 +162,117 @@ private:
 };
 
 
-class Window2 final : public QMainWindow
+int runApp(int argc, char **argv)
 {
+    DarkThemeApplication application(argc, argv);
+    Window window;
+    window.resize(1200, 800);
+    window.show();
+    return QApplication::exec();
+}
+
+#endif
+
+class PasswordManagerWindow final : public QMainWindow
+{
+    const std::unique_ptr<QMenuBar> menu { menuBar() };
     const std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
     const std::unique_ptr<QStatusBar> status { statusBar() };
     const std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
-    const std::unique_ptr<QMenuBar> menu { menuBar() };
 
 public:
 
-    Window2()
+    PasswordManagerWindow()
     {
-        // textEditField->resize(1200, 600);
+        this->resize(1200, 800);
 
+        createMenu();
         setCentralWidget(textEditField.get());
 
-        QMenu* menuFile = menu->addMenu("&File");
-
-
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &Window2::OnMenuItemClick);
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &Window2::OnMenuItemClick);
-
-        menuFile->addSeparator();
-
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &Window2::OnMenuItemClick);
-        menuFile->addAction("Save &As...", this,&Window2::OnMenuItemClick);
-
-        menuFile->addSeparator();
-
-        menuFile->addAction("&Exit", this,&Window2::OnMenuItemClick);
-
-
-
         statusLabel->setText("Status Label");
-        status->showMessage("Status bar...");
+        status->showMessage("Status bar... | On the LEFT");
         status->addPermanentWidget(statusLabel.get());
+
+
+
+
+        // INFO WordWrap
+        // textEditField->setWordWrapMode(QTextOption::WordWrap);
+        // textEditField->setReadOnly(true);
+        // textEditField->document()->find(text, document->textCursor(), flags);
+        // textEditField->setStyleSheet("font: 24pt ;");
+
+        // QTextEdit::ExtraSelection selection;
+        // selection.format.setBackground(Qt::yellow);
+        // selection.format.setForeground(Qt::black);
+
+        // textEditField->installEventFilter(this);
+
+
+        // setMenuBar(menu.get());
+        // setStatusBar(status.get());
 
         showMaximized();
     }
 
-    void OnMenuItemClick() const
+private:
+
+    void createMenu()
+    {
+        QMenu* menuFile = menu->addMenu("&File");
+
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &PasswordManagerWindow::handleMenuItemClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &PasswordManagerWindow::handleMenuItemClick);
+
+        menuFile->addSeparator();
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &PasswordManagerWindow::handleMenuItemClick);
+        menuFile->addAction("Save &As...", this,&PasswordManagerWindow::handleMenuItemClick);
+
+        menuFile->addSeparator();
+        menuFile->addAction("&Exit", this,&PasswordManagerWindow::close);
+
+        QMenu* menuHelp = menu->addMenu("&Help");
+        menuHelp->addAction("&About", this, &PasswordManagerWindow::onAboutClick);
+
+
+    }
+
+    void handleMenuItemClick() const
     {
         status->showMessage("Status bar...... | ");
     }
+
+    void onAboutClick()
+    {
+        QMessageBox::about(this, "About", "Simple password manager app"
+                                          ".\nVersion 1.0.0\n\n@ 2024 by Andrei Tokmakov.");
+    }
+
+
+public:
+
+    /*
+    void OpenDialog()
+    {
+        std::unique_ptr<QDialog> dialog { std::make_unique<QDialog>() };
+        // dialog->setAttribute(Qt::WA_DeleteOnClose);
+        dialog->show();
+    }*/
 };
 
 
-void runApp(int argc, char **argv)
-{
-    Application application(argc, argv);
-    Window window;
-    window.resize(1200, 800);
-    window.show();
-    QApplication::exec();
-}
 
-int runApp2(int argc, char **argv)
-{
-    Application app(argc, argv);
 
-    // QTextEdit textEdit("Hello World!");
-    // textEdit.show();
 
-    Window2 window;
-    window.show();
+// TODO:
+//  - Open file
+//  - Handle close
+//  - Password Dialog on Open
+//  - Choose BG color && Text Color
+//  - Decrypt / Encrypt password file
 
-    return Application::exec();
-}
 
+// INFO: Menu: https://ravesli.com/urok-7-sozdanie-menyu-i-paneli-instrumentov-v-qt5/?ysclid=m3tsgy076u360587604
 
 // https://cpp.hotexamples.com/examples/-/QTextEdit/-/cpp-qtextedit-class-examples.html
 int main([[maybe_unused]] int argc,
@@ -229,8 +280,14 @@ int main([[maybe_unused]] int argc,
 {
     const std::vector<std::string_view> args(argv + 1, argv + argc);
 
-    // runApp(argc, argv);
-    runApp2(argc, argv);
+    DarkThemeApplication app(argc, argv);
 
-    return EXIT_SUCCESS;
+    // std::unique_ptr<QDialog> dialog { std::make_unique<QDialog>() };
+    // dialog->setAttribute(Qt::WA_DeleteOnClose);
+    // dialog->show();
+
+    PasswordManagerWindow window;
+    window.show();
+
+    return DarkThemeApplication::exec();
 }
