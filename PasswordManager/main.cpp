@@ -10,6 +10,8 @@ Description : PasswordManager.cpp
 #include <iostream>
 #include <string_view>
 #include <vector>
+#include <filesystem>
+#include <fstream>
 
 
 #include <QTextEdit>
@@ -29,6 +31,31 @@ Description : PasswordManager.cpp
 #include <QHeaderView>
 #include <QTreeView>
 #include <QLabel>
+#include <QFileDialog>
+
+
+namespace FileUtilities
+{
+    constexpr size_t readBlockSize { 1024 };
+
+    [[nodiscard]]
+    std::string ReadFile(const std::filesystem::path& filePath)
+    {
+        if (std::ifstream file(filePath); file.is_open() && file.good())
+        {
+            file.seekg(0, std::ios_base::end);
+            size_t fileSize = file.tellg(), bytesRead = 0;
+            file.seekg(0, std::ios_base::beg);
+
+            std::string text(fileSize, '\0');
+            while ((bytesRead += file.readsome(text.data() + bytesRead, readBlockSize)) < fileSize) { }
+            return text;
+        }
+        return {};
+    }
+
+
+}
 
 class DarkThemeApplication final : public QApplication
 {
@@ -39,7 +66,7 @@ public:
 
 private:
 
-    static QColor makeColor(int32_t red = 0, int32_t green = 0, int32_t blue = 0) noexcept
+    static QColor makeColor(const int32_t red = 0, const int32_t green = 0, const int32_t blue = 0) noexcept
     {
         return QColor(red, green, blue);
     }
@@ -222,7 +249,7 @@ private:
         QMenu* menuFile = menu->addMenu("&File");
 
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &PasswordManagerWindow::handleMenuItemClick);
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &PasswordManagerWindow::handleMenuItemClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &PasswordManagerWindow::handleOpenFileClick);
 
         menuFile->addSeparator();
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &PasswordManagerWindow::handleMenuItemClick);
@@ -241,6 +268,18 @@ private:
     {
         status->showMessage("Status bar...... | ");
     }
+
+    void handleOpenFileClick()
+    {
+        const QString fileName = QFileDialog::getOpenFileName(this,
+            QString::fromUtf8("Choose a file"),
+            QDir::currentPath(),
+            "Text files (*.txt);All files (*.*)");
+
+        const std::string text = FileUtilities::ReadFile(fileName.toStdString().c_str());
+        textEditField->setText(text.c_str());
+    }
+
 
     void onAboutClick()
     {
@@ -270,6 +309,8 @@ public:
 //  - Password Dialog on Open
 //  - Choose BG color && Text Color
 //  - Decrypt / Encrypt password file
+//  - list of previously opened files
+//  - Store HEADER in file when savin data?
 
 
 // INFO: Menu: https://ravesli.com/urok-7-sozdanie-menyu-i-paneli-instrumentov-v-qt5/?ysclid=m3tsgy076u360587604
