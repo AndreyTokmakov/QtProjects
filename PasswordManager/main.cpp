@@ -280,7 +280,8 @@ private:
     {
         const QString fileName = QFileDialog::getOpenFileName(this,
             QString::fromUtf8("Choose a file"),
-            QDir::currentPath(),
+            // QDir::currentPath(),
+            QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
             "Text files (*.txt);All files (*.*)");
 
         const std::string text = FileUtilities::ReadFile(fileName.toStdString().c_str());
@@ -289,15 +290,27 @@ private:
 
     void handleSaveFileClick()
     {
+        /*
         const QString fileName = QFileDialog::getSaveFileName(this,
                                                               QString::fromUtf8("Choose a file"),
                                                               QDir::currentPath(),
                                                               "Text files (*.txt);All files (*.*)");
-        const std::string file { fileName.toStdString() };
-        std::cout << file << std::endl;
+        const std::filesystem::path destFileName { fileName.toStdString() };
+        */
 
+        const std::filesystem::path destFileName {
+            R"(/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/secret.dat)"
+        };
 
-        FileUtilities::WriteToFileBytes(fileEncrypted, dataEncrypted);
+        const std::string iv = "1234567890123456", key = "some_password";
+        const std::vector<uint8_t> ivBytes { str2Bytes(iv) };
+        const std::string& dataToEncrypt = textEditField->toPlainText().toStdString();
+
+        std::vector<uint8_t> dataEncrypted;
+        Encryption::encrypt(str2Bytes(key), str2Bytes(dataToEncrypt), ivBytes, dataEncrypted);
+
+        FileUtilities::WriteToFileBytes(destFileName, dataEncrypted);
+        std::cout << dataEncrypted.size() << " bytes were stored to " << destFileName << std::endl;
     }
 
     void onAboutClick()
