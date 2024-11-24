@@ -11,6 +11,7 @@ Description : FileUtilities.h
 #define CPPPROJECTS_FILEUTILITIES_H
 
 #include <filesystem>
+#include <vector>
 
 namespace FileUtilities
 {
@@ -21,6 +22,10 @@ namespace FileUtilities
 
     int32_t WriteToFile(const std::filesystem::path& filePath,
                         const std::string& text);
+
+    int32_t WriteToFileBytes(const std::filesystem::path& filePath,
+                             const std::vector<uint8_t>& data,
+                             std::ios_base::openmode mode = std::ios::out | std::ios::binary);
 
     int32_t AppendToFile(const std::filesystem::path& filePath,
                          const std::string& text);

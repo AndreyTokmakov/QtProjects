@@ -94,6 +94,19 @@ namespace FileUtilities
         return WriteToFile(filePath, text, std::ios_base::trunc);
     }
 
+    int32_t WriteToFileBytes(const std::filesystem::path& filePath,
+                             const std::vector<uint8_t>& data,
+                             std::ios_base::openmode mode)
+    {
+        if (std::fstream file(filePath, mode); file.is_open() && file.good())
+        {
+            const int32_t pos = static_cast<int32_t>(file.tellp());
+            file.write(reinterpret_cast<const char *>(data.data()), std::ssize(data));
+            return static_cast<int32_t>(file.tellp()) - pos;
+        }
+        return -1;
+    }
+
     int32_t AppendToFile(const std::filesystem::path& filePath,
                          const std::string& text)
     {
