@@ -33,6 +33,8 @@ namespace FileUtilities
     bool ReadFile2String(const std::filesystem::path& filePath,
                          std::string& dst);
 
+    std::vector<uint8_t> ReadFileAsBytes(const std::filesystem::path &filePath);
+
     [[nodiscard]]
     std::size_t getFileSize(const std::filesystem::path& filePath);
 

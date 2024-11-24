@@ -107,6 +107,21 @@ namespace FileUtilities
         return -1;
     }
 
+    std::vector<uint8_t> ReadFileAsBytes(const std::filesystem::path &filePath)
+    {
+        if (std::fstream file(filePath , std::ios::in | std::ios::binary); file.is_open() && file.good())
+        {
+            file.seekg(0, std::ios_base::end);
+            size_t fileSize = file.tellg(), bytesRead = 0;
+            file.seekg(0, std::ios_base::beg);
+
+            std::vector<uint8_t> data (fileSize);
+            while ((bytesRead += file.readsome(reinterpret_cast<char *>(data.data() + bytesRead), readBlockSize)) < fileSize) { }
+            return data;
+        }
+        return {};
+    }
+
     int32_t AppendToFile(const std::filesystem::path& filePath,
                          const std::string& text)
     {

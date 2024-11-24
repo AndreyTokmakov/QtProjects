@@ -12,6 +12,7 @@ Description : PasswordManager.cpp
 #include <vector>
 #include <filesystem>
 #include <fstream>
+#include <expected>
 
 
 #include <QTextEdit>
@@ -59,13 +60,21 @@ Description : PasswordManager.cpp
 #include <openssl/crypto.h>
 
 
-
 #include "FileUtilities.h"
 
 
 namespace
 {
     static std::vector<uint8_t> str2Bytes(const std::string& message)
+    {
+        std::vector<uint8_t> out(message.size());
+        for (size_t n = 0; n < message.size(); n++) {
+            out[n] = message[n];
+        }
+        return out;
+    }
+
+    static std::vector<uint8_t> str2Bytes(std::string_view message)
     {
         std::vector<uint8_t> out(message.size());
         for (size_t n = 0; n < message.size(); n++) {
@@ -84,7 +93,7 @@ namespace
 
 namespace Encryption
 {
-    void encrypt(const std::vector<uint8_t>& key,
+    bool encrypt(const std::vector<uint8_t>& key,
                  const std::vector<uint8_t>& message,
                  const std::vector<uint8_t>& iv,
                  std::vector<uint8_t>& output)
@@ -98,23 +107,25 @@ namespace Encryption
 
         if (0 == EVP_EncryptInit(ctx.get(), EVP_aes_256_cbc(), key.data(), iv.data())) {
             std::cerr << "Error: EVP_EncryptInit() failed" << std::endl;
-            return;
+            return false;
         }
         if (0 == EVP_EncryptUpdate(ctx.get(), output.data(), &outlen, message.data(), message.size())) {
             std::cerr << "Error: EVP_EncryptUpdate() failed" << std::endl;
-            return;
+            return false;
         }
         size_t total_out = outlen;
         if (0 == EVP_EncryptFinal(ctx.get(), output.data()+total_out, &outlen)) {
             std::cerr << "Error: EVP_EncryptUpdate() failed" << std::endl;
-            return;
+            return false;
         }
 
         total_out += outlen;
         output.resize(total_out);
+
+        return true;
     }
 
-    void decrypt(const std::vector<uint8_t>& key,
+    bool decrypt(const std::vector<uint8_t>& key,
                  const std::vector<uint8_t>& message,
                  const std::vector<uint8_t>& iv,
                  std::vector<uint8_t>& output)
@@ -127,20 +138,21 @@ namespace Encryption
         int outlen {0 };
         if (0 == EVP_DecryptInit(ctx.get(), EVP_aes_256_cbc(), key.data(), iv.data())) {
             std::cerr << "Error: EVP_EncryptInit() failed" << std::endl;
-            return;
+            return false;
         }
         if (0 == EVP_DecryptUpdate(ctx.get(), output.data(), &outlen, message.data(), message.size())) {
             std::cerr << "Error: EVP_DecryptUpdate() failed" << std::endl;
-            return;
+            return false;
         }
         size_t total_out = outlen;
         if (0 == EVP_DecryptFinal(ctx.get(), output.data() + outlen, &outlen)) {
             std::cerr << "Error: EVP_DecryptUpdate() failed" << std::endl;
-            return;
+            return false;
         }
 
         total_out += outlen;
         output.resize(total_out);
+        return true;
     }
 
 
@@ -212,9 +224,15 @@ private:
 class PasswordManagerWindow final : public QMainWindow
 {
     const std::unique_ptr<QMenuBar> menu { menuBar() };
-    const std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
     const std::unique_ptr<QStatusBar> status { statusBar() };
+    const std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
     const std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
+
+    static inline constexpr std::string_view iv = "1234567890123456";
+    static inline constexpr std::string_view key = "some_password";
+
+    // TODO: --> std::array
+    std::vector<uint8_t> ivBytes { str2Bytes(iv) };
 
 public:
 
@@ -282,41 +300,79 @@ private:
             QString::fromUtf8("Choose a file"),
             // QDir::currentPath(),
             QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
-            "Text files (*.txt);All files (*.*)");
+            "Text files (*.txt);Dat files (*.dat);All files (*.*)");
+        const std::filesystem::path filePath { fileName.toStdString() };
 
-        const std::string text = FileUtilities::ReadFile(fileName.toStdString().c_str());
-        textEditField->setText(text.c_str());
+        const std::expected<std::string, std::string> fileContent = decryptFile(filePath);
+        if (fileContent) {
+            textEditField->setText(fileContent.value().c_str());
+        } else {
+            textEditField->setText(fileContent.error().c_str());
+        }
     }
 
     void handleSaveFileClick()
     {
-        /*
         const QString fileName = QFileDialog::getSaveFileName(this,
                                                               QString::fromUtf8("Choose a file"),
                                                               QDir::currentPath(),
                                                               "Text files (*.txt);All files (*.*)");
-        const std::filesystem::path destFileName { fileName.toStdString() };
-        */
+        const std::filesystem::path filePath { fileName.toStdString() };
 
-        const std::filesystem::path destFileName {
+        /*
+        const std::filesystem::path filePath {
             R"(/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/secret.dat)"
-        };
+        };*/
 
-        const std::string iv = "1234567890123456", key = "some_password";
-        const std::vector<uint8_t> ivBytes { str2Bytes(iv) };
-        const std::string& dataToEncrypt = textEditField->toPlainText().toStdString();
 
-        std::vector<uint8_t> dataEncrypted;
-        Encryption::encrypt(str2Bytes(key), str2Bytes(dataToEncrypt), ivBytes, dataEncrypted);
-
-        FileUtilities::WriteToFileBytes(destFileName, dataEncrypted);
-        std::cout << dataEncrypted.size() << " bytes were stored to " << destFileName << std::endl;
+        const std::string& content = textEditField->toPlainText().toStdString();
+        const std::expected<std::vector<uint8_t>, bool> encryptedData = encryptContent(content);
+        if (encryptedData) {
+            const std::vector<uint8_t>& bytes = encryptedData.value();
+            FileUtilities::WriteToFileBytes(filePath, bytes);
+            status->showMessage(std::to_string(bytes.size()).append(" bytes were stored to ")
+                .append(filePath.string()).c_str());
+        }
+        else {
+            status->showMessage("Failed to encrypted data");
+        }
     }
 
     void onAboutClick()
     {
         QMessageBox::about(this, "About", "Simple password manager app"
                                           ".\nVersion 1.0.0\n\n@ 2024 by Andrei Tokmakov.");
+    }
+
+private:
+
+    // TODO: or Throw exception?
+    [[nodiscard]]
+    std::expected<std::string, std::string> decryptFile(const std::filesystem::path& filePath) const noexcept
+    {
+        std::string text = FileUtilities::ReadFile(filePath);
+
+        const std::vector<uint8_t> fileDataBytes = FileUtilities::ReadFileAsBytes(filePath);
+        std::vector<uint8_t> dataDecrypted;
+        if (!Encryption::decrypt(str2Bytes(key), fileDataBytes, ivBytes, dataDecrypted))
+        {
+            return std::unexpected("Decrypt failed");
+        }
+
+        return text;
+    }
+
+    // TODO: or Throw exception?
+    [[nodiscard]]
+    std::expected<std::vector<uint8_t>, bool> encryptContent(const std::string& data) const noexcept
+    {
+        std::vector<uint8_t> dataEncrypted;
+        if (Encryption::encrypt(str2Bytes(key), str2Bytes(data), ivBytes, dataEncrypted))
+        {
+            return dataEncrypted;
+        }
+
+        return std::unexpected(false);
     }
 
 
@@ -341,6 +397,13 @@ public:
 //  - Decrypt / Encrypt password file
 //  - list of previously opened files
 //  - Store HEADER in file when savin data?
+//  - Generate CERT, PASS, IV during the CMake ??
+//  -
+//  - Status bar updates:
+//  - 1.  Decrypt / Encrypt
+//  - 2.  Open and save file
+
+
 
 
 // INFO: Menu: https://ravesli.com/urok-7-sozdanie-menyu-i-paneli-instrumentov-v-qt5/?ysclid=m3tsgy076u360587604
