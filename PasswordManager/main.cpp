@@ -33,29 +33,7 @@ Description : PasswordManager.cpp
 #include <QLabel>
 #include <QFileDialog>
 
-
-namespace FileUtilities
-{
-    constexpr size_t readBlockSize { 1024 };
-
-    [[nodiscard]]
-    std::string ReadFile(const std::filesystem::path& filePath)
-    {
-        if (std::ifstream file(filePath); file.is_open() && file.good())
-        {
-            file.seekg(0, std::ios_base::end);
-            size_t fileSize = file.tellg(), bytesRead = 0;
-            file.seekg(0, std::ios_base::beg);
-
-            std::string text(fileSize, '\0');
-            while ((bytesRead += file.readsome(text.data() + bytesRead, readBlockSize)) < fileSize) { }
-            return text;
-        }
-        return {};
-    }
-
-
-}
+#include "FileUtilities.h"
 
 class DarkThemeApplication final : public QApplication
 {
@@ -105,100 +83,6 @@ private:
     }
 };
 
-#if 0
-class Window : public QMainWindow
-{
-    std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
-    std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
-
-    QFrame frame;
-    QVBoxLayout layout { &frame };
-    //QStandardItemModel model;
-
-    const std::unique_ptr<QStatusBar> status { statusBar() };
-    const std::unique_ptr<QMenuBar> menu { menuBar() };
-
-
-public:
-
-    Window()
-    {
-        statusLabel->setText("Status Label");
-
-        /** Add status bar: **/
-        status->showMessage("Status bar...");
-        status->addPermanentWidget(statusLabel.get());
-
-        //*
-        QMenu* menuFile = menu->addMenu("&File");
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &Window::OnMenuItemClick);
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &Window::OnMenuItemClick);
-
-        menuFile->addSeparator();
-
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &Window::OnMenuItemClick);
-        menuFile->addAction("Save &As...", this,&Window::OnMenuItemClick);
-
-        menuFile->addSeparator();
-
-        menuFile->addAction("&Exit", this,&Window::OnMenuItemClick);
-
-
-        QMenu* menuEdit = menu->addMenu("&Edit");
-        menuEdit->addAction("&Undo", this,&Window::OnMenuItemClick);
-        menuEdit->addAction("&Redo", this,&Window::OnMenuItemClick);
-
-        menuEdit->addSeparator();
-
-        menuEdit->addAction(QIcon::fromTheme("edit-cut"), "&Cut",this, &Window::OnMenuItemClick);
-        menuEdit->addAction(QIcon::fromTheme("edit-copy"), "&Copy",this, &Window::OnMenuItemClick);
-        menuEdit->addAction(QIcon::fromTheme("edit-paste"), "&Paste",this, &Window::OnMenuItemClick);
-
-        menuEdit->addSeparator();
-
-        menuEdit->addAction("Select &All", this,&Window::OnMenuItemClick);
-
-        QMenu* menuHelp = menu->addMenu("&Help");
-        menuHelp->addAction("&About", this, &Window::OnMenuHelpAboutClick);
-       // *//
-
-        // textEditField->setText("Hello, world!");
-
-        layout.layout()->addWidget(textEditField.get());
-
-        setCentralWidget(&frame);
-        setWindowTitle("Tree view example");
-        // resize(300, 300);
-        showMaximized();
-
-        // thread.start();
-        // thread.wait();
-    }
-
-private:
-
-    void OnMenuItemClick() const
-    {
-        status->showMessage("Status bar...... | ");
-    }
-
-    void OnMenuHelpAboutClick() {
-        QMessageBox::about(this, "About", "Simple password manager app"
-                                          ".\nVersion 1.0.0\n\n@ 2024 by Andrei Tokmakov.");
-    }
-};
-
-
-int runApp(int argc, char **argv)
-{
-    DarkThemeApplication application(argc, argv);
-    Window window;
-    window.resize(1200, 800);
-    window.show();
-    return QApplication::exec();
-}
-
-#endif
 
 class PasswordManagerWindow final : public QMainWindow
 {
@@ -252,16 +136,14 @@ private:
         menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &PasswordManagerWindow::handleOpenFileClick);
 
         menuFile->addSeparator();
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &PasswordManagerWindow::handleMenuItemClick);
-        menuFile->addAction("Save &As...", this,&PasswordManagerWindow::handleMenuItemClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &PasswordManagerWindow::handleSaveFileClick);
+        menuFile->addAction("Save &As...", this,&PasswordManagerWindow::handleSaveFileClick);
 
         menuFile->addSeparator();
         menuFile->addAction("&Exit", this,&PasswordManagerWindow::close);
 
         QMenu* menuHelp = menu->addMenu("&Help");
         menuHelp->addAction("&About", this, &PasswordManagerWindow::onAboutClick);
-
-
     }
 
     void handleMenuItemClick() const
@@ -280,6 +162,15 @@ private:
         textEditField->setText(text.c_str());
     }
 
+    void handleSaveFileClick()
+    {
+        const QString fileName = QFileDialog::getSaveFileName(this,
+                                                              QString::fromUtf8("Choose a file"),
+                                                              QDir::currentPath(),
+                                                              "Text files (*.txt);All files (*.*)");
+        const std::string file { fileName.toStdString() };
+        std::cout << file << std::endl;
+    }
 
     void onAboutClick()
     {

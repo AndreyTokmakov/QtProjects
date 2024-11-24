@@ -17,6 +17,7 @@ find_package(Qt5Core REQUIRED)
 # include all components
 add_executable(${PROJECT_NAME} 
     main.cpp
+    FileUtilities.cpp
 )
 
  # Link phread library
