@@ -299,7 +299,7 @@ private:
         const QString fileName = QFileDialog::getOpenFileName(this,
             QString::fromUtf8("Choose a file"),
             // QDir::currentPath(),
-            QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
+            QDir("/home/andtokm/Projects/QtProjects/PasswordManager/data/").path(),
             "Text files (*.txt);Dat files (*.dat);All files (*.*)");
         const std::filesystem::path filePath { fileName.toStdString() };
 
@@ -307,16 +307,17 @@ private:
         if (fileContent) {
             textEditField->setText(fileContent.value().c_str());
         } else {
-            textEditField->setText(fileContent.error().c_str());
+            status->showMessage(fileContent.error().c_str());
         }
     }
 
     void handleSaveFileClick()
     {
         const QString fileName = QFileDialog::getSaveFileName(this,
-                                                              QString::fromUtf8("Choose a file"),
-                                                              QDir::currentPath(),
-                                                              "Text files (*.txt);All files (*.*)");
+                QString::fromUtf8("Choose a file"),
+                // QDir::currentPath(),
+                QDir("/home/andtokm/Projects/QtProjects/PasswordManager/data/").path(),
+                "secret.dat");
         const std::filesystem::path filePath { fileName.toStdString() };
 
         /*
@@ -334,7 +335,7 @@ private:
                 .append(filePath.string()).c_str());
         }
         else {
-            status->showMessage("Failed to encrypted data");
+            status->showMessage("Failed to encrypt data");
         }
     }
 
