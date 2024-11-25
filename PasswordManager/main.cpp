@@ -299,15 +299,16 @@ private:
         const QString fileName = QFileDialog::getOpenFileName(this,
             QString::fromUtf8("Choose a file"),
             // QDir::currentPath(),
-            QDir("/home/andtokm/Projects/QtProjects/PasswordManager/data/").path(),
+            QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
             "Text files (*.txt);Dat files (*.dat);All files (*.*)");
         const std::filesystem::path filePath { fileName.toStdString() };
 
-        const std::expected<std::string, std::string> fileContent = decryptFile(filePath);
-        if (fileContent) {
-            textEditField->setText(fileContent.value().c_str());
-        } else {
-            status->showMessage(fileContent.error().c_str());
+        try {
+            const std::string fileContent = decryptFileEx(filePath);
+            textEditField->setText(fileContent.c_str());
+        }
+        catch (const std::exception& exc) {
+            status->showMessage(exc.what());
         }
     }
 
@@ -315,27 +316,16 @@ private:
     {
         const QString fileName = QFileDialog::getSaveFileName(this,
                 QString::fromUtf8("Choose a file"),
-                // QDir::currentPath(),
-                QDir("/home/andtokm/Projects/QtProjects/PasswordManager/data/").path(),
-                "secret.dat");
+                QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path());
         const std::filesystem::path filePath { fileName.toStdString() };
-
-        /*
-        const std::filesystem::path filePath {
-            R"(/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/secret.dat)"
-        };*/
-
-
         const std::string& content = textEditField->toPlainText().toStdString();
-        const std::expected<std::vector<uint8_t>, bool> encryptedData = encryptContent(content);
-        if (encryptedData) {
-            const std::vector<uint8_t>& bytes = encryptedData.value();
-            FileUtilities::WriteToFileBytes(filePath, bytes);
-            status->showMessage(std::to_string(bytes.size()).append(" bytes were stored to ")
-                .append(filePath.string()).c_str());
+
+        try {
+            const std::vector<uint8_t> bytesEncrypted = encryptContentEx(content);
+            FileUtilities::WriteToFileBytes(filePath, bytesEncrypted);
         }
-        else {
-            status->showMessage("Failed to encrypt data");
+        catch (const std::exception& exc) {
+            status->showMessage(exc.what());
         }
     }
 
@@ -347,35 +337,62 @@ private:
 
 private:
 
-    // TODO: or Throw exception?
     [[nodiscard]]
     std::expected<std::string, std::string> decryptFile(const std::filesystem::path& filePath) const noexcept
     {
-        std::string text = FileUtilities::ReadFile(filePath);
-
+        /*
         const std::vector<uint8_t> fileDataBytes = FileUtilities::ReadFileAsBytes(filePath);
         std::vector<uint8_t> dataDecrypted;
         if (!Encryption::decrypt(str2Bytes(key), fileDataBytes, ivBytes, dataDecrypted))
         {
             return std::unexpected("Decrypt failed");
         }
+        */
 
-        return text;
+        const std::vector<uint8_t> fileDataBytes = FileUtilities::ReadFileAsBytes(filePath);
+        return bytes2Str(fileDataBytes);
     }
 
-    // TODO: or Throw exception?
     [[nodiscard]]
     std::expected<std::vector<uint8_t>, bool> encryptContent(const std::string& data) const noexcept
     {
-        std::vector<uint8_t> dataEncrypted;
-        if (Encryption::encrypt(str2Bytes(key), str2Bytes(data), ivBytes, dataEncrypted))
-        {
-            return dataEncrypted;
-        }
+        std::vector<uint8_t> dataBytes = str2Bytes(data);
+        return dataBytes;
+
+
+        /*if (Encryption::encrypt(str2Bytes(key), str2Bytes(data), ivBytes, dataBytes)){
+            return dataBytes;
+        } */
 
         return std::unexpected(false);
     }
 
+    [[nodiscard]]
+    std::string decryptFileEx(const std::filesystem::path& filePath) const
+    {
+        const std::vector<uint8_t> fileDataBytes = FileUtilities::ReadFileAsBytes(filePath);
+
+        std::vector<uint8_t> dataDecrypted;
+        if (!Encryption::decrypt(str2Bytes(key), fileDataBytes, ivBytes, dataDecrypted)) {
+            throw std::runtime_error("Decrypt failed");
+        }
+
+        return bytes2Str(fileDataBytes);
+    }
+
+    [[nodiscard]]
+    std::vector<uint8_t> encryptContentEx(const std::string& data) const
+    {
+        std::vector<uint8_t> dataBytes = str2Bytes(data);
+        return dataBytes;
+
+
+        /*if (Encryption::encrypt(str2Bytes(key), str2Bytes(data), ivBytes, dataBytes)){
+            return dataBytes;
+        } */
+
+        return std::unexpected(false);
+    }
 
 public:
 
