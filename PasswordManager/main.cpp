@@ -105,7 +105,7 @@ namespace Encryption
                 EVP_CIPHER_CTX_new(), ::EVP_CIPHER_CTX_free
         };
 
-        if (0 == EVP_EncryptInit(ctx.get(), EVP_aes_256_cbc(), key.data(), iv.data())) {
+        if (0 == EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data())) {
             std::cerr << "Error: EVP_EncryptInit() failed" << std::endl;
             return false;
         }
@@ -114,13 +114,15 @@ namespace Encryption
             return false;
         }
         size_t total_out = outlen;
-        if (0 == EVP_EncryptFinal(ctx.get(), output.data()+total_out, &outlen)) {
+        if (0 == EVP_EncryptFinal_ex(ctx.get(), output.data()+total_out, &outlen)) {
             std::cerr << "Error: EVP_EncryptUpdate() failed" << std::endl;
             return false;
         }
 
         total_out += outlen;
         output.resize(total_out);
+
+        EVP_CIPHER_CTX_cleanup(ctx.get());
 
         return true;
     }
@@ -135,23 +137,26 @@ namespace Encryption
                 EVP_CIPHER_CTX_new(), ::EVP_CIPHER_CTX_free
         };
 
-        int outlen {0 };
-        if (0 == EVP_DecryptInit(ctx.get(), EVP_aes_256_cbc(), key.data(), iv.data())) {
+        int32_t decLen { 0 }, blockLen { 0 };
+        if (0 == EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data())) {
             std::cerr << "Error: EVP_EncryptInit() failed" << std::endl;
             return false;
         }
-        if (0 == EVP_DecryptUpdate(ctx.get(), output.data(), &outlen, message.data(), message.size())) {
+        if (0 == EVP_DecryptUpdate(ctx.get(), output.data(), &blockLen, message.data(), message.size())) {
             std::cerr << "Error: EVP_DecryptUpdate() failed" << std::endl;
             return false;
         }
-        size_t total_out = outlen;
-        if (0 == EVP_DecryptFinal(ctx.get(), output.data() + outlen, &outlen)) {
+        decLen += blockLen;
+
+        if (0 == EVP_DecryptFinal_ex(ctx.get(), output.data() + decLen, &blockLen)) {
             std::cerr << "Error: EVP_DecryptUpdate() failed" << std::endl;
             return false;
         }
 
-        total_out += outlen;
-        output.resize(total_out);
+        decLen += blockLen;
+        output.resize(decLen);
+
+        EVP_CIPHER_CTX_cleanup(ctx.get());
         return true;
     }
 
@@ -228,7 +233,7 @@ class PasswordManagerWindow final : public QMainWindow
     const std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
     const std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
 
-    static inline constexpr std::string_view iv = "1234567890123456";
+    static inline constexpr std::string_view iv = "";
     static inline constexpr std::string_view key = "some_password";
 
     // TODO: --> std::array
@@ -276,11 +281,14 @@ private:
     {
         QMenu* menuFile = menu->addMenu("&File");
 
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),"&New",this, &PasswordManagerWindow::handleMenuItemClick);
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon), "&Open",this, &PasswordManagerWindow::handleOpenFileClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_FileIcon),
+                            "&New",this, &PasswordManagerWindow::handleNewFileClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DirOpenIcon),
+                            "&Open",this, &PasswordManagerWindow::handleOpenFileClick);
 
         menuFile->addSeparator();
-        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),"&Save", this, &PasswordManagerWindow::handleSaveFileClick);
+        menuFile->addAction(style()->standardIcon(QStyle::StandardPixmap::SP_DialogSaveButton),
+                            "&Save", this, &PasswordManagerWindow::handleSaveFileClick);
         menuFile->addAction("Save &As...", this,&PasswordManagerWindow::handleSaveFileClick);
 
         menuFile->addSeparator();
@@ -300,7 +308,7 @@ private:
         const QString fileName = QFileDialog::getOpenFileName(this,
             QString::fromUtf8("Choose a file"),
             // QDir::currentPath(),
-            QDir("/home/andtokm/Projects/QtProjects/PasswordManager/data/").path(),
+            QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
             "Text files (*.txt);Dat files (*.dat);All files (*.*)");
         const std::filesystem::path filePath { fileName.toStdString() };
 
@@ -313,11 +321,29 @@ private:
         }
     }
 
+    void handleNewFileClick() // FIXME --> Remove
+    {
+        const QString fileName = QFileDialog::getOpenFileName(this,
+                                                              QString::fromUtf8("Choose a file"),
+                // QDir::currentPath(),
+                                                              QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
+                                                              "Text files (*.txt);Dat files (*.dat);All files (*.*)");
+        const std::filesystem::path filePath { fileName.toStdString() };
+
+        try {
+            const std::string fileContent = FileUtilities::ReadFile(filePath);
+            textEditField->setText(fileContent.c_str());
+        }
+        catch (const std::exception& exc) {
+            status->showMessage(exc.what());
+        }
+    }
+
     void handleSaveFileClick()
     {
         const QString fileName = QFileDialog::getSaveFileName(this,
                 QString::fromUtf8("Choose a file"),
-                QDir("/home/andtokm/Projects/QtProjects/PasswordManager/data/").path());
+                QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path());
         const std::filesystem::path filePath { fileName.toStdString() };
         const std::string& content = textEditField->toPlainText().toStdString();
 
@@ -382,7 +408,7 @@ private:
             throw std::runtime_error("Decrypt failed");
         }
 
-        return bytes2Str(fileDataBytes);
+        return bytes2Str(dataDecrypted);
     }
 
     [[nodiscard]]
@@ -409,24 +435,21 @@ public:
     }*/
 };
 
-
-
-
-
-// TODO:
-//  - Password Dialog on Open
-//  - Choose BG color && Text Color
-//  - Decrypt / Encrypt password file
-//  - list of previously opened files
-//  - Store HEADER in file when savin data?
-//  - Generate CERT, PASS, IV during the CMake ??
-//  -
-//  - Status bar updates:
-//  - 1.  Decrypt / Encrypt
-//  - 2.  Open and save file
-
-
-
+/**
+================================ UI Configuration   ===================
+- Import NON-encyptied file --> to Encrypt && Store file
+- Choose BG color && Text Color
+- Decrypt / Encrypt password file
+- list of previously opened files
+================================ Status bar updates ===================
+- Decrypt / Encrypt
+- Open and save file
+================================ Security ==============================
+- Open APP --- with Password --> Open dialog before
+- Check the file INTEGRITY - have not changed by diff app????
+- Store HEADER in file when savin data?
+- Generate CERT, PASS, IV during the CMake ??
+**/
 
 // INFO: Menu: https://ravesli.com/urok-7-sozdanie-menyu-i-paneli-instrumentov-v-qt5/?ysclid=m3tsgy076u360587604
 
