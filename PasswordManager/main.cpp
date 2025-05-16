@@ -324,10 +324,10 @@ private:
     void handleNewFileClick() // FIXME --> Remove
     {
         const QString fileName = QFileDialog::getOpenFileName(this,
-                                                              QString::fromUtf8("Choose a file"),
+                QString::fromUtf8("Choose a file"),
                 // QDir::currentPath(),
-                                                              QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
-                                                              "Text files (*.txt);Dat files (*.dat);All files (*.*)");
+                QDir("/home/andtokm/DiskS/ProjectsUbuntu/QtProjects/PasswordManager/data/").path(),
+                "Text files (*.txt);Dat files (*.dat);All files (*.*)");
         const std::filesystem::path filePath { fileName.toStdString() };
 
         try {
