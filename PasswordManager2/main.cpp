@@ -34,6 +34,20 @@ Description : PasswordManager.cpp
 #include "Encryption.h"
 
 
+// FIXME
+#include "hex.h"
+#include "base64.h"
+#include "osrng.h"
+#include "modes.h"
+
+
+
+namespace {
+
+    constexpr std::string_view FOLDER { R"(/home/andtokm/DiskS/Temp/Folder_For_Testing)" };
+}
+
+
 class DarkThemeApplication final : public QApplication
 {
 public:
@@ -90,12 +104,10 @@ class PasswordManagerWindow final : public QMainWindow
     const std::unique_ptr<QTextEdit> textEditField = std::make_unique<QTextEdit>(this);
     const std::unique_ptr<QLabel> statusLabel = std::make_unique<QLabel>(this);
 
-    static inline constexpr std::string_view iv = "";
-    static inline constexpr std::string_view key = "some_password";
-
-    // TODO: --> std::array
-    std::vector<uint8_t> ivBytes { Utilities::str2Bytes(iv) };
-    std::vector<uint8_t> keyBytes { Utilities::str2Bytes(key) };
+    // static inline constexpr std::string_view iv = "";
+    // static inline constexpr std::string_view key = "some_password";
+    // std::vector<uint8_t> ivBytes { Utilities::str2Bytes(iv) };
+    // std::vector<uint8_t> keyBytes { Utilities::str2Bytes(key) };
 
 public:
 
@@ -158,21 +170,23 @@ private:
         status->showMessage("Status bar...... | ");
     }
 
+
     void handleOpenFileClick()
     {
         const QString fileName = QFileDialog::getOpenFileName(this,
             QString::fromUtf8("Choose a file"),
             // QDir::currentPath(),
-            QDir("/home/andtokm/Projects/QtProjects/PasswordManager2/data/").path(),
+            QDir(FOLDER.data()).path(),
             "Dat files (*.dat);All files (*.*)");
         const std::filesystem::path filePath { fileName.toStdString() };
 
-        try {
-            const auto decrypted = Encryption::decryptFile(filePath);
-            textEditField->setText(decrypted.value().c_str());
-        }
-        catch (const std::exception& exc) {
-            status->showMessage(exc.what());
+        const std::expected<std::string, std::string> result = Encryption::decryptFile(filePath);
+        if (result) {
+            const std::string& decryptedText = result.value();
+            textEditField->setText(decryptedText.c_str());
+            status->showMessage(std::to_string(decryptedText.size()).append(" bytes decrypted").data());
+        } else {
+            status->showMessage(result.error().data());
         }
     }
 
@@ -181,7 +195,7 @@ private:
         const QString fileName = QFileDialog::getOpenFileName(this,
                 QString::fromUtf8("Choose a file"),
                 // QDir::currentPath(),
-                QDir("/home/andtokm/Projects/QtProjects/PasswordManager2/data/").path(),
+                QDir(FOLDER.data()).path(),
                 "Text files (*.txt);Dat files (*.dat);All files (*.*)");
         const std::filesystem::path filePath { fileName.toStdString() };
 
@@ -198,7 +212,7 @@ private:
     {
         const QString fileName = QFileDialog::getSaveFileName(this,
                 QString::fromUtf8("Choose a file"),
-                QDir("/home/andtokm/Projects/QtProjects/PasswordManager2/data/").path());
+                QDir(FOLDER.data()).path());
         const std::filesystem::path filePath { fileName.toStdString() };
         const std::string& content = textEditField->toPlainText().toStdString();
 

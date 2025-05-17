@@ -76,10 +76,10 @@ namespace Encryption
         0x8c, 0xd7, 0x6f, 0xf1, 0x32, 0xaa, 0x44, 0xb5, 0x44,0x71, 0x90, 0xf3, 0x4f, 0x52, 0xfd, 0x88,
         0x3c, 0x4a,0xe3, 0x0, 0x42, 0xd9, 0x93, 0x40, 0xf5, 0x96, 0xa2, 0x30, 0x70, 0xf3, 0x3c, 0x78
     };
+
     const std::vector<uint8_t> ivBytes {
         0x9d, 0x85, 0xc7, 0x69, 0x7a, 0xec, 0xd4, 0x93, 0xa3, 0x4b, 0x1, 0x87, 0xb3, 0xf0, 0x46, 0x88
     };
-
 
     [[nodiscard]]
     std::expected<std::string, bool> encrypt(const std::string& content) noexcept
@@ -92,7 +92,7 @@ namespace Encryption
     std::expected<std::string, std::string> decryptFile(const std::filesystem::path& filePath) noexcept
     {
         const std::string secretText = FileUtilities::ReadFile(filePath);
-        std::string encryptedData = encrypt(secretText, keyBytes, ivBytes);
+        std::string encryptedData = decrypt(secretText, keyBytes, ivBytes);
 
         // FIXME: Handle error
         return encryptedData;
