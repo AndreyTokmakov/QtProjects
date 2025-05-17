@@ -13,9 +13,11 @@ find_package(Qt5Core REQUIRED)
 set(PROJECT_DIR ${CMAKE_SOURCE_DIR}/${PROJECT_NAME})
 set(UTILS ${PROJECT_DIR}/utils)
 set(CRYPTO ${PROJECT_DIR}/crypto)
+set(UI ${PROJECT_DIR}/ui)
 
 include_directories(${UTILS})
 include_directories(${CRYPTO})
+include_directories(${UI})
 include_directories(${THIRD_PARTY_DIR}/cryptopp)
 link_directories(${THIRD_PARTY_DIR}/cryptopp)
 
@@ -25,9 +27,11 @@ add_executable(${PROJECT_NAME}
         ${UTILS}/FileUtilities.cpp
         ${UTILS}/Utilities.cpp
         ${CRYPTO}/Encryption.cpp
+        ${UI}/LoginDialog.cpp
+        ${UI}/DarkThemeApplication.cpp
+        ${UI}/PasswordManagerWindow.cpp
 )
 
- # Link phread library
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
         pthread
         -lcryptopp
